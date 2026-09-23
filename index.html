@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voice to Invoice — LocalPro Media</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --imessage-blue: #007AFF; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: #F5F5F7;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .chat-scroll { -webkit-overflow-scrolling: touch; }
+
+  /* Message bubble tails, iMessage-style */
+  .bubble-right {
+    background: var(--imessage-blue); color: #fff; border-radius: 20px; border-bottom-right-radius: 5px;
+  }
+  .bubble-left {
+    background: #E9E9EB; color: #111; border-radius: 20px; border-bottom-left-radius: 5px;
+  }
+
+  /* Typing indicator dots */
+  .typing-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #9AA0A6; display: inline-block;
+    animation: typingBounce 1.2s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: .5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* Mic button recording pulse */
+  .mic-recording {
+    animation: micPulse 1.2s infinite;
+  }
+  @keyframes micPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,59,48,0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(255,59,48,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); }
+  }
+
+  .invoice-card { background: #fff; border-radius: 14px; overflow: hidden; }
+  .invoice-row:not(:last-child) { border-bottom: 1px solid #EEEEF0; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: #d1d1d6; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="flex flex-col h-screen max-w-md mx-auto bg-white shadow-xl relative">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white/90 backdrop-blur sticky top-0 z-20">
+    <div class="w-9 h-9 rounded-full bg-[var(--imessage-blue)] flex items-center justify-center text-white font-bold text-sm">AI</div>
+    <div>
+      <div class="font-semibold text-[15px] leading-tight text-gray-900">Quote Assistant</div>
+      <div class="text-[12px] text-gray-400 leading-tight">Speak or type a job, get an invoice</div>
+    </div>
+  </div>
+
+  <!-- Chat area -->
+  <div id="chat" class="chat-scroll flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-[#F5F5F7]">
+    <!-- Intro bubble -->
+    <div class="flex justify-start">
+      <div class="bubble-left px-4 py-2.5 max-w-[80%] text-[15px] leading-snug">
+        Hey! Tell me about the job &mdash; client name, address, and what you're billing for.
+        You can type it, or tap the mic and just talk.
+      </div>
+    </div>
+  </div>
+
+  <!-- Input bar -->
+  <div class="px-3 pb-3 pt-2 border-t border-gray-200 bg-white/95 backdrop-blur sticky bottom-0 z-20">
+    <div class="flex items-end gap-2">
+      <button id="micBtn" aria-label="Record voice"
+        class="flex-shrink-0 w-11 h-11 rounded-full bg-[var(--imessage-blue)] text-white flex items-center justify-center shadow-md active:scale-95 transition">
+        <svg id="micIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+          <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+
+      <div class="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2.5">
+        <input id="textInput" type="text" placeholder="Describe the job..."
+          class="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder-gray-400">
+      </div>
+
+      <button id="sendBtn" aria-label="Send"
+        class="flex-shrink-0 w-11 h-11 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center transition disabled:opacity-50">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>
+      </button>
+    </div>
+    <div id="recordingHint" class="hidden text-center text-[12px] text-red-500 font-medium mt-2">Recording&hellip; tap the mic again to stop</div>
+  </div>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const micBtn = document.getElementById('micBtn');
+const textInput = document.getElementById('textInput');
+const sendBtn = document.getElementById('sendBtn');
+const recordingHint = document.getElementById('recordingHint');
+
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+function scrollToBottom() {
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addUserBubble(label) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-end';
+  wrap.innerHTML = `<div class="bubble-right px-4 py-2.5 max-w-[80%] text-[15px] leading-snug">${escapeHtml(label)}</div>`;
+  chat.appendChild(wrap);
+  scrollToBottom();
+}
+
+function addTypingBubble() {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  wrap.id = 'typingBubble';
+  wrap.innerHTML = `
+    <div class="bubble-left px-4 py-3 flex items-center gap-1">
+      <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+    </div>`;
+  chat.appendChild(wrap);
+  scrollToBottom();
+}
+
+function removeTypingBubble() {
+  const el = document.getElementById('typingBubble');
+  if (el) el.remove();
+}
+
+function addErrorBubble(message) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  wrap.innerHTML = `<div class="bubble-left px-4 py-2.5 max-w-[80%] text-[15px] leading-snug text-red-600">${escapeHtml(message)}</div>`;
+  chat.appendChild(wrap);
+  scrollToBottom();
+}
+
+function addInvoiceBubble(invoice) {
+  const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];
+  const subtotal = items.reduce((sum, li) => sum + (Number(li.quantity) || 0) * (Number(li.rate) || 0), 0);
+  const grandTotal = subtotal; // no tax field in this version — add one here if you need it
+
+  const rowsHtml = items.map(li => {
+    const qty = Number(li.quantity) || 0;
+    const rate = Number(li.rate) || 0;
+    const lineTotal = qty * rate;
+    return `
+      <div class="invoice-row px-4 py-2.5">
+        <div class="flex justify-between text-[13.5px] font-medium text-gray-900">
+          <span class="pr-2">${escapeHtml(li.description || 'Item')}</span>
+          <span class="whitespace-nowrap">${fmtMoney(lineTotal)}</span>
+        </div>
+        <div class="text-[11.5px] text-gray-400 mt-0.5">${qty} &times; ${fmtMoney(rate)}</div>
+      </div>`;
+  }).join('') || `<div class="px-4 py-3 text-[13px] text-gray-400">No line items detected.</div>`;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  wrap.innerHTML = `
+    <div class="bubble-left p-1 max-w-[86%] w-full">
+      <div class="invoice-card">
+        <div class="px-4 pt-3 pb-2">
+          <div class="text-[11px] font-semibold tracking-wide text-[var(--imessage-blue)] uppercase">Quote</div>
+          <div class="text-[16px] font-bold text-gray-900 mt-0.5">${escapeHtml(invoice.client_name || 'New Client')}</div>
+          ${invoice.address ? `<div class="text-[12.5px] text-gray-400 mt-0.5">${escapeHtml(invoice.address)}</div>` : ''}
+        </div>
+        <div>${rowsHtml}</div>
+        <div class="px-4 py-2.5 flex justify-between text-[13px] text-gray-500 border-t border-gray-100">
+          <span>Subtotal</span><span>${fmtMoney(subtotal)}</span>
+        </div>
+        <div class="px-4 py-3 flex justify-between items-center bg-gray-50">
+          <span class="text-[14px] font-semibold text-gray-900">Grand Total</span>
+          <span class="text-[17px] font-bold text-[var(--imessage-blue)]">${fmtMoney(grandTotal)}</span>
+        </div>
+      </div>
+    </div>`;
+  chat.appendChild(wrap);
+  scrollToBottom();
+}
+
+function fmtMoney(n) {
+  return '$' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
+}
+
+async function sendToBackend({ audioBlob, text }) {
+  const formData = new FormData();
+  if (audioBlob) formData.append('audio', audioBlob, 'recording.webm');
+  if (text) formData.append('text', text);
+
+  const res = await fetch('/api/generate-quote', { method: 'POST', body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || 'Something went wrong. Please try again.');
+  }
+  return data;
+}
+
+async function handleSubmission({ audioBlob, text, userLabel }) {
+  addUserBubble(userLabel);
+  addTypingBubble();
+  try {
+    const invoice = await sendToBackend({ audioBlob, text });
+    removeTypingBubble();
+    addInvoiceBubble(invoice);
+  } catch (err) {
+    removeTypingBubble();
+    addErrorBubble(err.message || 'Something went wrong. Please try again.');
+  }
+}
+
+// ---- Typed text submission ----
+function submitText() {
+  const value = textInput.value.trim();
+  if (!value) return;
+  textInput.value = '';
+  handleSubmission({ text: value, userLabel: value });
+}
+sendBtn.addEventListener('click', submitText);
+textInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitText();
+});
+
+// ---- Voice recording ----
+micBtn.addEventListener('click', async () => {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        handleSubmission({ audioBlob, userLabel: '🎤 Voice message' });
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      micBtn.classList.add('mic-recording', 'bg-red-500');
+      micBtn.classList.remove('bg-[var(--imessage-blue)]');
+      recordingHint.classList.remove('hidden');
+    } catch (err) {
+      addErrorBubble('Microphone access is needed to record a voice quote.');
+    }
+  } else {
+    mediaRecorder.stop();
+    isRecording = false;
+    micBtn.classList.remove('mic-recording', 'bg-red-500');
+    micBtn.classList.add('bg-[var(--imessage-blue)]');
+    recordingHint.classList.add('hidden');
+  }
+});
+</script>
+
+</body>
+</html>
