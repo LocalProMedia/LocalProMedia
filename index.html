@@ -14,18 +14,13 @@
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-
   .chat-scroll { -webkit-overflow-scrolling: touch; }
-
-  /* Message bubble tails, iMessage-style */
   .bubble-right {
     background: var(--imessage-blue); color: #fff; border-radius: 20px; border-bottom-right-radius: 5px;
   }
   .bubble-left {
     background: #E9E9EB; color: #111; border-radius: 20px; border-bottom-left-radius: 5px;
   }
-
-  /* Typing indicator dots */
   .typing-dot {
     width: 7px; height: 7px; border-radius: 50%; background: #9AA0A6; display: inline-block;
     animation: typingBounce 1.2s infinite ease-in-out;
@@ -36,51 +31,69 @@
     0%, 60%, 100% { transform: translateY(0); opacity: .5; }
     30% { transform: translateY(-4px); opacity: 1; }
   }
-
-  /* Mic button recording pulse */
-  .mic-recording {
-    animation: micPulse 1.2s infinite;
-  }
+  .mic-recording { animation: micPulse 1.2s infinite; }
   @keyframes micPulse {
     0% { box-shadow: 0 0 0 0 rgba(255,59,48,0.5); }
     70% { box-shadow: 0 0 0 12px rgba(255,59,48,0); }
     100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); }
   }
-
   .invoice-card { background: #fff; border-radius: 14px; overflow: hidden; }
   .invoice-row:not(:last-child) { border-bottom: 1px solid #EEEEF0; }
-
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-thumb { background: #d1d1d6; border-radius: 3px; }
 </style>
 </head>
 <body>
-
 <div class="flex flex-col h-screen max-w-md mx-auto bg-white shadow-xl relative">
 
   <!-- Header -->
   <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white/90 backdrop-blur sticky top-0 z-20">
     <div class="w-9 h-9 rounded-full bg-[var(--imessage-blue)] flex items-center justify-center text-white font-bold text-sm">AI</div>
-    <div>
+    <div class="flex-1">
       <div class="font-semibold text-[15px] leading-tight text-gray-900">Quote Assistant</div>
-      <div class="text-[12px] text-gray-400 leading-tight">Speak or type a job, get an invoice</div>
+      <div class="text-[12px] text-gray-400 leading-tight">Speak, type, or attach a screenshot</div>
     </div>
+    <button id="settingsBtn" aria-label="Settings"
+      class="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 active:scale-95 transition">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Chat area -->
   <div id="chat" class="chat-scroll flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-[#F5F5F7]">
-    <!-- Intro bubble -->
     <div class="flex justify-start">
       <div class="bubble-left px-4 py-2.5 max-w-[80%] text-[15px] leading-snug">
-        Hey! Tell me about the job &mdash; client name, address, and what you're billing for.
-        You can type it, or tap the mic and just talk.
+        Hey! Tell me about the job — client name, address, and what you're billing for.
+        You can type it, tap the mic and talk, or attach a screenshot of the customer's text.
       </div>
+    </div>
+  </div>
+
+  <!-- Image preview strip (shown when a screenshot/photo is attached) -->
+  <div id="imagePreviewWrap" class="hidden px-3 pt-2 bg-white/95 backdrop-blur border-t border-gray-100">
+    <div class="relative inline-block">
+      <img id="imagePreviewThumb" class="h-16 w-16 rounded-lg object-cover border border-gray-200" alt="Attached screenshot preview">
+      <button id="removeImageBtn" aria-label="Remove image"
+        class="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center leading-none">×</button>
     </div>
   </div>
 
   <!-- Input bar -->
   <div class="px-3 pb-3 pt-2 border-t border-gray-200 bg-white/95 backdrop-blur sticky bottom-0 z-20">
+    <div id="liveCaption" class="hidden text-[12px] text-[var(--imessage-blue)] font-medium mb-1.5 px-1"></div>
+
     <div class="flex items-end gap-2">
+      <input id="imageFileInput" type="file" accept="image/*" class="hidden">
+      <button id="attachBtn" aria-label="Attach screenshot"
+        class="flex-shrink-0 w-11 h-11 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center active:scale-95 transition">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+        </svg>
+      </button>
+
       <button id="micBtn" aria-label="Record voice"
         class="flex-shrink-0 w-11 h-11 rounded-full bg-[var(--imessage-blue)] text-white flex items-center justify-center shadow-md active:scale-95 transition">
         <svg id="micIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -105,25 +118,120 @@
   </div>
 </div>
 
+<!-- Settings drawer -->
+<div id="settingsOverlay" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+  <div class="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-5 shadow-xl">
+    <div class="text-[16px] font-semibold text-gray-900 mb-1">Your default pricing</div>
+    <div class="text-[13px] text-gray-500 mb-4">Used to fill in line items when a job doesn't come with its own price.</div>
+
+    <label class="block text-[13px] font-medium text-gray-700 mb-1">Trade</label>
+    <select id="tradeSelect" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-[14px] mb-3">
+      <option value="cleaner">House Cleaning</option>
+      <option value="plumber">Plumbing</option>
+      <option value="painter">Painting</option>
+      <option value="electrician">Electrical</option>
+      <option value="landscaper">Landscaping</option>
+    </select>
+
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div>
+        <label class="block text-[13px] font-medium text-gray-700 mb-1">Hourly rate ($)</label>
+        <input id="hourlyRateInput" type="number" inputmode="decimal" placeholder="65"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-[14px]">
+      </div>
+      <div>
+        <label class="block text-[13px] font-medium text-gray-700 mb-1">Material markup (%)</label>
+        <input id="markupInput" type="number" inputmode="decimal" placeholder="15"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-[14px]">
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button id="settingsCancelBtn" class="flex-1 rounded-lg border border-gray-300 py-2 text-[14px] font-medium text-gray-700">Cancel</button>
+      <button id="settingsSaveBtn" class="flex-1 rounded-lg bg-[var(--imessage-blue)] py-2 text-[14px] font-medium text-white">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const chat = document.getElementById('chat');
 const micBtn = document.getElementById('micBtn');
 const textInput = document.getElementById('textInput');
 const sendBtn = document.getElementById('sendBtn');
 const recordingHint = document.getElementById('recordingHint');
+const liveCaption = document.getElementById('liveCaption');
+
+const attachBtn = document.getElementById('attachBtn');
+const imageFileInput = document.getElementById('imageFileInput');
+const imagePreviewWrap = document.getElementById('imagePreviewWrap');
+const imagePreviewThumb = document.getElementById('imagePreviewThumb');
+const removeImageBtn = document.getElementById('removeImageBtn');
+
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsOverlay = document.getElementById('settingsOverlay');
+const settingsCancelBtn = document.getElementById('settingsCancelBtn');
+const settingsSaveBtn = document.getElementById('settingsSaveBtn');
+const tradeSelect = document.getElementById('tradeSelect');
+const hourlyRateInput = document.getElementById('hourlyRateInput');
+const markupInput = document.getElementById('markupInput');
 
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
+let pendingImageFile = null;
+let speechRecognition = null;
 
+// ---- Business profile defaults (stored locally — no backend/auth in this app) ----
+const SETTINGS_KEY = 'quoteAssistantSettings';
+
+function loadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function saveSettingsToStorage(settings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function openSettings() {
+  const s = loadSettings();
+  tradeSelect.value = s.tradeType || 'cleaner';
+  hourlyRateInput.value = s.defaultHourlyRate || '';
+  markupInput.value = s.defaultMaterialMarkup || '';
+  settingsOverlay.classList.remove('hidden');
+}
+
+function closeSettings() {
+  settingsOverlay.classList.add('hidden');
+}
+
+settingsBtn.addEventListener('click', openSettings);
+settingsCancelBtn.addEventListener('click', closeSettings);
+settingsSaveBtn.addEventListener('click', () => {
+  saveSettingsToStorage({
+    tradeType: tradeSelect.value,
+    defaultHourlyRate: hourlyRateInput.value ? Number(hourlyRateInput.value) : null,
+    defaultMaterialMarkup: markupInput.value ? Number(markupInput.value) : null,
+  });
+  closeSettings();
+});
+
+// ---- Chat helpers ----
 function scrollToBottom() {
   chat.scrollTop = chat.scrollHeight;
 }
 
-function addUserBubble(label) {
+function addUserBubble(label, thumbUrl) {
   const wrap = document.createElement('div');
   wrap.className = 'flex justify-end';
-  wrap.innerHTML = `<div class="bubble-right px-4 py-2.5 max-w-[80%] text-[15px] leading-snug">${escapeHtml(label)}</div>`;
+  wrap.innerHTML = `
+    <div class="flex flex-col items-end gap-1 max-w-[80%]">
+      ${thumbUrl ? `<img src="${thumbUrl}" class="max-w-[200px] rounded-xl border border-gray-200 object-cover" alt="Attached screenshot">` : ''}
+      ${label ? `<div class="bubble-right px-4 py-2.5 text-[15px] leading-snug">${escapeHtml(label)}</div>` : ''}
+    </div>`;
   chat.appendChild(wrap);
   scrollToBottom();
 }
@@ -156,7 +264,8 @@ function addErrorBubble(message) {
 function addInvoiceBubble(invoice) {
   const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];
   const subtotal = items.reduce((sum, li) => sum + (Number(li.quantity) || 0) * (Number(li.rate) || 0), 0);
-  const grandTotal = subtotal; // no tax field in this version — add one here if you need it
+  const grandTotal = subtotal;
+  const invoiceId = 'inv_' + Math.random().toString(36).slice(2);
 
   const rowsHtml = items.map(li => {
     const qty = Number(li.quantity) || 0;
@@ -176,7 +285,7 @@ function addInvoiceBubble(invoice) {
   wrap.className = 'flex justify-start';
   wrap.innerHTML = `
     <div class="bubble-left p-1 max-w-[86%] w-full">
-      <div class="invoice-card">
+      <div class="invoice-card" id="${invoiceId}">
         <div class="px-4 pt-3 pb-2">
           <div class="text-[11px] font-semibold tracking-wide text-[var(--imessage-blue)] uppercase">Quote</div>
           <div class="text-[16px] font-bold text-gray-900 mt-0.5">${escapeHtml(invoice.client_name || 'New Client')}</div>
@@ -190,10 +299,34 @@ function addInvoiceBubble(invoice) {
           <span class="text-[14px] font-semibold text-gray-900">Grand Total</span>
           <span class="text-[17px] font-bold text-[var(--imessage-blue)]">${fmtMoney(grandTotal)}</span>
         </div>
+        <div class="px-4 pb-3 pt-1 bg-gray-50">
+          <button onclick="exportInvoice('${invoiceId}')"
+            class="w-full text-[13px] font-medium text-[var(--imessage-blue)] border border-blue-200 rounded-full py-1.5">
+            Export / Print
+          </button>
+        </div>
       </div>
     </div>`;
   chat.appendChild(wrap);
   scrollToBottom();
+}
+
+function exportInvoice(invoiceId) {
+  const card = document.getElementById(invoiceId);
+  if (!card) return;
+  const win = window.open('', '_blank', 'width=600,height=800');
+  if (!win) return;
+  win.document.write(`
+    <html>
+      <head><title>Quote</title></head>
+      <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 24px;">
+        ${card.innerHTML.replace(/<button[\s\S]*?<\/button>/, '')}
+      </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  win.print();
 }
 
 function fmtMoney(n) {
@@ -206,24 +339,27 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-async function sendToBackend({ audioBlob, text }) {
+// ---- Backend call ----
+async function sendToBackend({ audioBlob, imageFile, text }) {
+  const settings = loadSettings();
   const formData = new FormData();
   if (audioBlob) formData.append('audio', audioBlob, 'recording.webm');
+  if (imageFile) formData.append('image', imageFile, imageFile.name || 'screenshot.jpg');
   if (text) formData.append('text', text);
+  if (settings.defaultHourlyRate) formData.append('defaultHourlyRate', settings.defaultHourlyRate);
+  if (settings.defaultMaterialMarkup) formData.append('defaultMaterialMarkup', settings.defaultMaterialMarkup);
 
   const res = await fetch('/api/generate-quote', { method: 'POST', body: formData });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error || 'Something went wrong. Please try again.');
-  }
+  if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
   return data;
 }
 
-async function handleSubmission({ audioBlob, text, userLabel }) {
-  addUserBubble(userLabel);
+async function handleSubmission({ audioBlob, imageFile, text, userLabel, userThumbUrl }) {
+  addUserBubble(userLabel, userThumbUrl);
   addTypingBubble();
   try {
-    const invoice = await sendToBackend({ audioBlob, text });
+    const invoice = await sendToBackend({ audioBlob, imageFile, text });
     removeTypingBubble();
     addInvoiceBubble(invoice);
   } catch (err) {
@@ -232,19 +368,85 @@ async function handleSubmission({ audioBlob, text, userLabel }) {
   }
 }
 
-// ---- Typed text submission ----
+// ---- Image attach ----
+attachBtn.addEventListener('click', () => imageFileInput.click());
+
+imageFileInput.addEventListener('change', () => {
+  const file = imageFileInput.files[0];
+  if (!file) return;
+  pendingImageFile = file;
+  imagePreviewThumb.src = URL.createObjectURL(file);
+  imagePreviewWrap.classList.remove('hidden');
+});
+
+removeImageBtn.addEventListener('click', () => {
+  pendingImageFile = null;
+  imageFileInput.value = '';
+  imagePreviewWrap.classList.add('hidden');
+});
+
+// ---- Typed text / image submission ----
 function submitText() {
   const value = textInput.value.trim();
-  if (!value) return;
+  const hasImage = !!pendingImageFile;
+  if (!value && !hasImage) return;
+
+  const imageFile = pendingImageFile;
+  const thumbUrl = imageFile ? imagePreviewThumb.src : null;
+
   textInput.value = '';
-  handleSubmission({ text: value, userLabel: value });
+  pendingImageFile = null;
+  imageFileInput.value = '';
+  imagePreviewWrap.classList.add('hidden');
+
+  handleSubmission({
+    text: value,
+    imageFile,
+    userLabel: value,
+    userThumbUrl: thumbUrl,
+  });
 }
+
 sendBtn.addEventListener('click', submitText);
 textInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') submitText();
 });
 
-// ---- Voice recording ----
+// Paste a screenshot directly into the chat (common on desktop)
+document.addEventListener('paste', (e) => {
+  const items = Array.from(e.clipboardData?.items || []).filter(i => i.type.startsWith('image/'));
+  if (!items.length) return;
+  const file = items[0].getAsFile();
+  if (!file) return;
+  pendingImageFile = file;
+  imagePreviewThumb.src = URL.createObjectURL(file);
+  imagePreviewWrap.classList.remove('hidden');
+});
+
+// ---- Voice recording (audio sent to Gemini) + optional live caption ----
+// Live captions use the Web Speech API purely as an on-screen preview while
+// talking — the actual transcription Gemini uses comes from the recorded
+// audio itself, so this still works correctly in browsers without speech
+// recognition support (the caption line is simply skipped).
+function setupLiveCaption() {
+  const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+  if (!SpeechRecognition) return null;
+  const recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = 0; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+    liveCaption.textContent = transcript;
+    liveCaption.classList.remove('hidden');
+  };
+  recognition.onerror = () => {};
+  return recognition;
+}
+
 micBtn.addEventListener('click', async () => {
   if (!isRecording) {
     try {
@@ -262,6 +464,11 @@ micBtn.addEventListener('click', async () => {
       micBtn.classList.add('mic-recording', 'bg-red-500');
       micBtn.classList.remove('bg-[var(--imessage-blue)]');
       recordingHint.classList.remove('hidden');
+
+      speechRecognition = setupLiveCaption();
+      if (speechRecognition) {
+        try { speechRecognition.start(); } catch (_) {}
+      }
     } catch (err) {
       addErrorBubble('Microphone access is needed to record a voice quote.');
     }
@@ -271,9 +478,15 @@ micBtn.addEventListener('click', async () => {
     micBtn.classList.remove('mic-recording', 'bg-red-500');
     micBtn.classList.add('bg-[var(--imessage-blue)]');
     recordingHint.classList.add('hidden');
+
+    if (speechRecognition) {
+      speechRecognition.stop();
+      speechRecognition = null;
+    }
+    liveCaption.classList.add('hidden');
+    liveCaption.textContent = '';
   }
 });
 </script>
-
 </body>
 </html>
