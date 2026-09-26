@@ -14,16 +14,13 @@
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  /* Desktop: soft backdrop behind the phone-width card. Mobile: card fills the screen. */
   @media (min-width: 640px) {
     body {
       background: radial-gradient(circle at top, #f0f1f4, #d9dbe0);
       display: flex; align-items: center; justify-content: center;
     }
   }
-  .app-shell {
-    width: 100%; max-width: 480px; height: 100vh;
-  }
+  .app-shell { width: 100%; max-width: 480px; height: 100vh; }
   @media (min-width: 640px) {
     .app-shell {
       height: 88vh; max-height: 820px;
@@ -31,12 +28,8 @@
     }
   }
   .chat-scroll { -webkit-overflow-scrolling: touch; }
-  .bubble-right {
-    background: var(--imessage-blue); color: #fff; border-radius: 20px; border-bottom-right-radius: 5px;
-  }
-  .bubble-left {
-    background: #E9E9EB; color: #111; border-radius: 20px; border-bottom-left-radius: 5px;
-  }
+  .bubble-right { background: var(--imessage-blue); color: #fff; border-radius: 20px; border-bottom-right-radius: 5px; }
+  .bubble-left { background: #E9E9EB; color: #111; border-radius: 20px; border-bottom-left-radius: 5px; }
   .typing-dot {
     width: 7px; height: 7px; border-radius: 50%; background: #9AA0A6; display: inline-block;
     animation: typingBounce 1.2s infinite ease-in-out;
@@ -55,6 +48,15 @@
   }
   .invoice-card { background: #fff; border-radius: 14px; overflow: hidden; }
   .invoice-row:not(:last-child) { border-bottom: 1px solid #EEEEF0; }
+  .li-input { border: none; background: transparent; outline: none; font: inherit; color: inherit; width: 100%; }
+  .li-input:focus { background: #F5F7FA; border-radius: 6px; }
+  .num-input { border: none; background: transparent; outline: none; font: inherit; color: inherit; width: 100%; text-align: right; }
+  .num-input:focus { background: #F5F7FA; border-radius: 6px; }
+  .menu-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 12px 10px; border-radius: 10px; font-size: 14.5px; color: #1c1c1e; font-weight: 500;
+  }
+  .menu-item:hover { background: #F5F5F7; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-thumb { background: #d1d1d6; border-radius: 3px; }
 </style>
@@ -62,28 +64,17 @@
 <body>
 <div class="app-shell flex flex-col bg-white relative">
 
-  <!-- Header -->
-  <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white/90 backdrop-blur sticky top-0 z-20">
-    <div class="w-9 h-9 rounded-full bg-[var(--imessage-blue)] flex items-center justify-center text-white font-bold text-sm">AI</div>
-    <div class="flex-1">
-      <div class="font-semibold text-[15px] leading-tight text-gray-900">LocalPro Assistant</div>
-      <div class="text-[12px] text-gray-400 leading-tight">Speak, type, or attach a screenshot</div>
-    </div>
-    <button id="helpBtn" aria-label="How to use this"
-      class="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 active:scale-95 transition">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
+  <!-- Header: iMessage-style contact card -->
+  <div class="relative flex flex-col items-center gap-0.5 px-4 pt-3.5 pb-3 border-b border-gray-200 bg-white/90 backdrop-blur sticky top-0 z-20">
+    <button id="menuBtn" aria-label="Menu"
+      class="absolute right-3 top-3 w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 active:scale-95 transition">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
       </svg>
     </button>
-    <button id="settingsBtn" aria-label="Settings"
-      class="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 active:scale-95 transition">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-      </svg>
-    </button>
+    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--imessage-blue)] to-blue-400 flex items-center justify-center text-white font-bold text-[19px] shadow-sm">AI</div>
+    <div class="font-semibold text-[15px] leading-tight text-gray-900 mt-1">LocalPro Assistant</div>
+    <div class="text-[12px] text-gray-400 leading-tight">Speak, type, or attach a screenshot</div>
   </div>
 
   <!-- Chat area -->
@@ -93,6 +84,16 @@
         Hey! Tell me about the job — client name, address, and what you're billing for.
         You can type it, tap the mic and talk, or attach a screenshot of the customer's text.
       </div>
+    </div>
+  </div>
+
+  <!-- Active contact chip -->
+  <div id="activeContactChip" class="hidden px-3 pt-2 bg-white/95 backdrop-blur border-t border-gray-100">
+    <div class="inline-flex items-center gap-1.5 bg-blue-50 text-[var(--imessage-blue)] rounded-full pl-3 pr-1.5 py-1 text-[12.5px] font-medium">
+      <span>Quoting for:</span>
+      <span id="activeContactLabel" class="font-semibold"></span>
+      <button id="clearActiveContactBtn" aria-label="Clear contact"
+        class="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center text-[10px] leading-none">×</button>
     </div>
   </div>
 
@@ -139,6 +140,19 @@
       </button>
     </div>
     <div id="recordingHint" class="hidden text-center text-[12px] text-red-500 font-medium mt-2">Recording&hellip; tap the mic again to stop</div>
+  </div>
+</div>
+
+<!-- Menu sheet -->
+<div id="menuOverlay" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+  <div class="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-3 shadow-xl">
+    <button class="menu-item" data-open="contacts"><span>👤</span><span>Contacts</span></button>
+    <button class="menu-item" data-open="history"><span>🕘</span><span>Quote History</span></button>
+    <button class="menu-item" data-open="settings"><span>⚙️</span><span>Pricing Defaults</span></button>
+    <button class="menu-item" data-open="help"><span>❓</span><span>How to use this</span></button>
+    <div class="border-t border-gray-100 mt-1 pt-1">
+      <button id="menuCloseBtn" class="menu-item text-gray-400">Close</button>
+    </div>
   </div>
 </div>
 
@@ -200,12 +214,47 @@
         <div class="w-8 h-8 rounded-full bg-blue-50 text-[var(--imessage-blue)] flex items-center justify-center flex-shrink-0 text-[15px]">❓</div>
         <div class="text-[13.5px] text-gray-700 leading-snug"><span class="font-medium text-gray-900">If it's too vague</span> — it'll ask you one quick follow-up question before quoting, instead of guessing.</div>
       </div>
+      <div class="flex gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-50 text-[var(--imessage-blue)] flex items-center justify-center flex-shrink-0 text-[15px]">✏️</div>
+        <div class="text-[13.5px] text-gray-700 leading-snug"><span class="font-medium text-gray-900">Every quote is editable</span> — tap any line item to fix quantities or prices before you save, export, or send it.</div>
+      </div>
     </div>
 
     <div class="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Try an example</div>
     <div id="exampleChips" class="flex flex-col gap-2 mb-4"></div>
 
     <button id="helpCloseBtn" class="w-full rounded-lg bg-[var(--imessage-blue)] py-2 text-[14px] font-medium text-white">Got it</button>
+  </div>
+</div>
+
+<!-- Contacts sheet -->
+<div id="contactsOverlay" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+  <div class="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-5 shadow-xl max-h-[85vh] overflow-y-auto">
+    <div class="text-[16px] font-semibold text-gray-900 mb-1">Contacts</div>
+    <div class="text-[13px] text-gray-500 mb-3">Pick a contact to attach to your next quote, or add a new one.</div>
+
+    <div id="contactsList" class="space-y-2 mb-4"></div>
+
+    <div class="border-t border-gray-100 pt-3 space-y-2">
+      <div class="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Add contact</div>
+      <input id="contactNameInput" placeholder="Name" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-[14px]">
+      <input id="contactPhoneInput" placeholder="Phone (for texting the quote)" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-[14px]">
+      <input id="contactEmailInput" placeholder="Email (for emailing the quote)" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-[14px]">
+      <input id="contactAddressInput" placeholder="Address" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-[14px]">
+      <button id="addContactBtn" class="w-full rounded-lg bg-[var(--imessage-blue)] py-2 text-white text-[14px] font-medium">Add contact</button>
+    </div>
+
+    <button id="contactsCloseBtn" class="w-full mt-3 rounded-lg border border-gray-300 py-2 text-[14px] font-medium text-gray-700">Close</button>
+  </div>
+</div>
+
+<!-- Quote history sheet -->
+<div id="historyOverlay" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+  <div class="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-5 shadow-xl max-h-[85vh] overflow-y-auto">
+    <div class="text-[16px] font-semibold text-gray-900 mb-1">Quote History</div>
+    <div class="text-[13px] text-gray-500 mb-3">Saved quotes stick around even after you close this tab. Tap one to reopen it.</div>
+    <div id="historyList" class="space-y-2 mb-4"></div>
+    <button id="historyCloseBtn" class="w-full rounded-lg border border-gray-300 py-2 text-[14px] font-medium text-gray-700">Close</button>
   </div>
 </div>
 
@@ -232,7 +281,6 @@ const imagePreviewWrap = document.getElementById('imagePreviewWrap');
 const imagePreviewThumb = document.getElementById('imagePreviewThumb');
 const removeImageBtn = document.getElementById('removeImageBtn');
 
-const settingsBtn = document.getElementById('settingsBtn');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const settingsCancelBtn = document.getElementById('settingsCancelBtn');
 const settingsSaveBtn = document.getElementById('settingsSaveBtn');
@@ -245,27 +293,45 @@ let audioChunks = [];
 let isRecording = false;
 let pendingImageFile = null;
 let speechRecognition = null;
+let activeContact = null; // { id, name, phone, email, address }
 
 // Running conversation history for this browser tab only — lets the AI ask a
 // follow-up question, then use your reply, without a backend database.
-// [{ role: 'user' | 'model', text: '...' }]
 let conversationHistory = [];
 
-// ---- Business profile defaults (stored locally — no backend/auth in this app) ----
+// ---- localStorage keys ----
 const SETTINGS_KEY = 'localProAssistantSettings';
+const CONTACTS_KEY = 'localProAssistantContacts';
+const HISTORY_KEY = 'localProAssistantQuoteHistory';
+const TUTORIAL_SEEN_KEY = 'localProAssistantSeenTutorial';
 
-function loadSettings() {
-  try {
-    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
-  } catch (_) {
-    return {};
-  }
+function loadJSON(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (_) { return fallback; }
 }
+function saveJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 
-function saveSettingsToStorage(settings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
+function loadSettings() { return loadJSON(SETTINGS_KEY, {}); }
+function saveSettingsToStorage(s) { saveJSON(SETTINGS_KEY, s); }
 
+// ---- Menu sheet ----
+const menuBtn = document.getElementById('menuBtn');
+const menuOverlay = document.getElementById('menuOverlay');
+const menuCloseBtn = document.getElementById('menuCloseBtn');
+
+menuBtn.addEventListener('click', () => menuOverlay.classList.remove('hidden'));
+menuCloseBtn.addEventListener('click', () => menuOverlay.classList.add('hidden'));
+menuOverlay.querySelectorAll('[data-open]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    menuOverlay.classList.add('hidden');
+    const target = btn.getAttribute('data-open');
+    if (target === 'contacts') openContacts();
+    if (target === 'history') openHistory();
+    if (target === 'settings') openSettings();
+    if (target === 'help') openHelp();
+  });
+});
+
+// ---- Settings drawer ----
 function openSettings() {
   const s = loadSettings();
   tradeSelect.value = s.tradeType || 'cleaner';
@@ -273,12 +339,8 @@ function openSettings() {
   markupInput.value = s.defaultMaterialMarkup || '';
   settingsOverlay.classList.remove('hidden');
 }
+function closeSettings() { settingsOverlay.classList.add('hidden'); }
 
-function closeSettings() {
-  settingsOverlay.classList.add('hidden');
-}
-
-settingsBtn.addEventListener('click', openSettings);
 settingsCancelBtn.addEventListener('click', closeSettings);
 settingsSaveBtn.addEventListener('click', () => {
   saveSettingsToStorage({
@@ -290,17 +352,14 @@ settingsSaveBtn.addEventListener('click', () => {
 });
 
 // ---- Tutorial / examples ----
-const helpBtn = document.getElementById('helpBtn');
 const helpOverlay = document.getElementById('helpOverlay');
 const helpCloseBtn = document.getElementById('helpCloseBtn');
 const exampleChips = document.getElementById('exampleChips');
-const TUTORIAL_SEEN_KEY = 'localProAssistantSeenTutorial';
 
 function renderExampleChips() {
   const settings = loadSettings();
   const preferredTrade = settings.tradeType || 'cleaner';
   const order = [preferredTrade, ...Object.keys(EXAMPLE_PROMPTS).filter(t => t !== preferredTrade)];
-
   exampleChips.innerHTML = '';
   order.forEach((trade) => {
     const prompt = EXAMPLE_PROMPTS[trade];
@@ -316,29 +375,157 @@ function renderExampleChips() {
     exampleChips.appendChild(chip);
   });
 }
-
-function openHelp() {
-  renderExampleChips();
-  helpOverlay.classList.remove('hidden');
-}
-
-function closeHelp() {
-  helpOverlay.classList.add('hidden');
-  localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
-}
-
-helpBtn.addEventListener('click', openHelp);
+function openHelp() { renderExampleChips(); helpOverlay.classList.remove('hidden'); }
+function closeHelp() { helpOverlay.classList.add('hidden'); localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); }
 helpCloseBtn.addEventListener('click', closeHelp);
+if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) openHelp();
 
-// Auto-show once, on first visit only
-if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
-  openHelp();
+// ---- Contacts ----
+const contactsOverlay = document.getElementById('contactsOverlay');
+const contactsList = document.getElementById('contactsList');
+const contactsCloseBtn = document.getElementById('contactsCloseBtn');
+const addContactBtn = document.getElementById('addContactBtn');
+const contactNameInput = document.getElementById('contactNameInput');
+const contactPhoneInput = document.getElementById('contactPhoneInput');
+const contactEmailInput = document.getElementById('contactEmailInput');
+const contactAddressInput = document.getElementById('contactAddressInput');
+const activeContactChip = document.getElementById('activeContactChip');
+const activeContactLabel = document.getElementById('activeContactLabel');
+const clearActiveContactBtn = document.getElementById('clearActiveContactBtn');
+
+function getContacts() { return loadJSON(CONTACTS_KEY, []); }
+function setContacts(list) { saveJSON(CONTACTS_KEY, list); }
+
+function renderContacts() {
+  const contacts = getContacts();
+  contactsList.innerHTML = '';
+  if (contacts.length === 0) {
+    contactsList.innerHTML = `<div class="text-[13px] text-gray-400 py-2">No saved contacts yet.</div>`;
+    return;
+  }
+  contacts.forEach((c) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-2 rounded-xl border border-gray-200 px-3 py-2';
+    const details = [c.phone, c.email, c.address].filter(Boolean).join(' · ');
+    row.innerHTML = `
+      <button class="flex-1 text-left" data-use="${c.id}">
+        <div class="text-[14px] font-medium text-gray-900">${escapeHtml(c.name)}</div>
+        ${details ? `<div class="text-[12px] text-gray-400">${escapeHtml(details)}</div>` : ''}
+      </button>
+      <button data-delete="${c.id}" aria-label="Delete contact" class="w-7 h-7 rounded-full text-gray-400 hover:bg-gray-100 flex items-center justify-center flex-shrink-0">🗑</button>
+    `;
+    contactsList.appendChild(row);
+  });
+
+  contactsList.querySelectorAll('[data-use]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const c = getContacts().find(x => x.id === btn.getAttribute('data-use'));
+      if (c) setActiveContact(c);
+      closeContacts();
+    });
+  });
+  contactsList.querySelectorAll('[data-delete]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-delete');
+      setContacts(getContacts().filter(c => c.id !== id));
+      if (activeContact && activeContact.id === id) clearActiveContact();
+      renderContacts();
+    });
+  });
 }
+
+function setActiveContact(c) {
+  activeContact = c;
+  activeContactLabel.textContent = c.name;
+  activeContactChip.classList.remove('hidden');
+}
+function clearActiveContact() {
+  activeContact = null;
+  activeContactChip.classList.add('hidden');
+}
+clearActiveContactBtn.addEventListener('click', clearActiveContact);
+
+addContactBtn.addEventListener('click', () => {
+  const name = contactNameInput.value.trim();
+  if (!name) return;
+  const contact = {
+    id: 'c_' + Math.random().toString(36).slice(2),
+    name,
+    phone: contactPhoneInput.value.trim(),
+    email: contactEmailInput.value.trim(),
+    address: contactAddressInput.value.trim(),
+  };
+  const contacts = getContacts();
+  contacts.unshift(contact);
+  setContacts(contacts);
+  contactNameInput.value = '';
+  contactPhoneInput.value = '';
+  contactEmailInput.value = '';
+  contactAddressInput.value = '';
+  renderContacts();
+});
+
+function openContacts() { renderContacts(); contactsOverlay.classList.remove('hidden'); }
+function closeContacts() { contactsOverlay.classList.add('hidden'); }
+contactsCloseBtn.addEventListener('click', closeContacts);
+
+// ---- Quote history ----
+const historyOverlay = document.getElementById('historyOverlay');
+const historyList = document.getElementById('historyList');
+const historyCloseBtn = document.getElementById('historyCloseBtn');
+
+function getHistory() { return loadJSON(HISTORY_KEY, []); }
+function setHistory(list) { saveJSON(HISTORY_KEY, list); }
+
+function saveInvoiceToHistory(invoiceId, invoice) {
+  const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];
+  const total = items.reduce((sum, li) => sum + (Number(li.quantity) || 0) * (Number(li.rate) || 0), 0);
+  const entry = {
+    id: invoiceId,
+    client_name: invoice.client_name || '',
+    address: invoice.address || '',
+    line_items: items,
+    total,
+    savedAt: new Date().toISOString(),
+  };
+  const history = getHistory();
+  const idx = history.findIndex(h => h.id === invoiceId);
+  if (idx >= 0) history[idx] = entry; else history.unshift(entry);
+  setHistory(history.slice(0, 100)); // keep it from growing forever
+}
+
+function renderHistory() {
+  const history = getHistory();
+  historyList.innerHTML = '';
+  if (history.length === 0) {
+    historyList.innerHTML = `<div class="text-[13px] text-gray-400 py-2">No saved quotes yet.</div>`;
+    return;
+  }
+  history.forEach((h) => {
+    const row = document.createElement('button');
+    row.className = 'w-full text-left rounded-xl border border-gray-200 px-3 py-2 hover:bg-gray-50';
+    const dateLabel = new Date(h.savedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    row.innerHTML = `
+      <div class="flex justify-between items-center">
+        <div class="text-[14px] font-medium text-gray-900">${escapeHtml(h.client_name || 'Untitled quote')}</div>
+        <div class="text-[13px] font-semibold text-[var(--imessage-blue)]">${fmtMoney(h.total)}</div>
+      </div>
+      <div class="text-[12px] text-gray-400">${dateLabel}${h.address ? ' · ' + escapeHtml(h.address) : ''}</div>
+    `;
+    row.addEventListener('click', () => {
+      closeHistory();
+      addInvoiceBubble({ client_name: h.client_name, address: h.address, line_items: h.line_items }, h.id);
+    });
+    historyList.appendChild(row);
+  });
+}
+
+function openHistory() { renderHistory(); historyOverlay.classList.remove('hidden'); }
+function closeHistory() { historyOverlay.classList.add('hidden'); }
+historyCloseBtn.addEventListener('click', closeHistory);
 
 // ---- Chat helpers ----
-function scrollToBottom() {
-  chat.scrollTop = chat.scrollHeight;
-}
+function scrollToBottom() { chat.scrollTop = chat.scrollHeight; }
 
 function addUserBubble(label, thumbUrl) {
   const wrap = document.createElement('div');
@@ -371,11 +558,7 @@ function addTypingBubble() {
   chat.appendChild(wrap);
   scrollToBottom();
 }
-
-function removeTypingBubble() {
-  const el = document.getElementById('typingBubble');
-  if (el) el.remove();
-}
+function removeTypingBubble() { const el = document.getElementById('typingBubble'); if (el) el.remove(); }
 
 function addErrorBubble(message) {
   const wrap = document.createElement('div');
@@ -385,66 +568,160 @@ function addErrorBubble(message) {
   scrollToBottom();
 }
 
-function addInvoiceBubble(invoice) {
-  const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];
-  const subtotal = items.reduce((sum, li) => sum + (Number(li.quantity) || 0) * (Number(li.rate) || 0), 0);
-  const grandTotal = subtotal;
-  const invoiceId = 'inv_' + Math.random().toString(36).slice(2);
+// ---- Editable invoice card ----
+function lineItemRowHtml(li) {
+  const qty = li && li.quantity != null ? li.quantity : 1;
+  const rate = li && li.rate != null ? li.rate : 0;
+  const desc = li && li.description ? li.description : '';
+  return `
+    <div class="invoice-row px-4 py-2.5" data-row>
+      <div class="flex items-center gap-2">
+        <input class="li-input text-[13.5px] font-medium text-gray-900" data-field="description" value="${escapeAttr(desc)}" placeholder="Item description">
+        <button data-remove-row aria-label="Remove item" class="text-gray-300 hover:text-red-500 text-[13px] flex-shrink-0 w-5 h-5 flex items-center justify-center">×</button>
+      </div>
+      <div class="flex items-center gap-1 text-[11.5px] text-gray-400 mt-1">
+        <input class="num-input" style="width:40px; text-align:left;" data-field="quantity" type="number" min="0" step="1" value="${qty}">
+        <span>&times; $</span>
+        <input class="num-input" style="width:56px; text-align:left;" data-field="rate" type="number" min="0" step="0.01" value="${rate}">
+        <span class="flex-1"></span>
+        <span data-line-total class="text-gray-500 font-medium">${fmtMoney(qty * rate)}</span>
+      </div>
+    </div>`;
+}
 
-  const rowsHtml = items.map(li => {
-    const qty = Number(li.quantity) || 0;
-    const rate = Number(li.rate) || 0;
-    const lineTotal = qty * rate;
-    return `
-      <div class="invoice-row px-4 py-2.5">
-        <div class="flex justify-between text-[13.5px] font-medium text-gray-900">
-          <span class="pr-2">${escapeHtml(li.description || 'Item')}</span>
-          <span class="whitespace-nowrap">${fmtMoney(lineTotal)}</span>
-        </div>
-        <div class="text-[11.5px] text-gray-400 mt-0.5">${qty} &times; ${fmtMoney(rate)}</div>
-      </div>`;
-  }).join('') || `<div class="px-4 py-3 text-[13px] text-gray-400">No line items detected.</div>`;
+function addInvoiceBubble(invoice, existingId) {
+  const items = Array.isArray(invoice.line_items) && invoice.line_items.length ? invoice.line_items : [{ description: '', quantity: 1, rate: 0 }];
+  const invoiceId = existingId || ('inv_' + Math.random().toString(36).slice(2));
 
   const wrap = document.createElement('div');
   wrap.className = 'flex justify-start';
   wrap.innerHTML = `
     <div class="bubble-left p-1 max-w-[86%] w-full">
       <div class="invoice-card" id="${invoiceId}">
-        <div class="px-4 pt-3 pb-2">
+        <div class="px-4 pt-3 pb-2 space-y-1">
           <div class="text-[11px] font-semibold tracking-wide text-[var(--imessage-blue)] uppercase">Quote</div>
-          <div class="text-[16px] font-bold text-gray-900 mt-0.5">${escapeHtml(invoice.client_name || 'New Client')}</div>
-          ${invoice.address ? `<div class="text-[12.5px] text-gray-400 mt-0.5">${escapeHtml(invoice.address)}</div>` : ''}
+          <input class="li-input text-[16px] font-bold text-gray-900" data-field="client_name" value="${escapeAttr(invoice.client_name || '')}" placeholder="Client name">
+          <input class="li-input text-[12.5px] text-gray-400" data-field="address" value="${escapeAttr(invoice.address || '')}" placeholder="Address (optional)">
         </div>
-        <div>${rowsHtml}</div>
+        <div data-rows>${items.map(lineItemRowHtml).join('')}</div>
+        <div class="px-4 py-2">
+          <button data-add-row class="text-[12.5px] font-medium text-[var(--imessage-blue)]">+ Add item</button>
+        </div>
         <div class="px-4 py-2.5 flex justify-between text-[13px] text-gray-500 border-t border-gray-100">
-          <span>Subtotal</span><span>${fmtMoney(subtotal)}</span>
+          <span>Subtotal</span><span data-subtotal>$0.00</span>
         </div>
         <div class="px-4 py-3 flex justify-between items-center bg-gray-50">
           <span class="text-[14px] font-semibold text-gray-900">Grand Total</span>
-          <span class="text-[17px] font-bold text-[var(--imessage-blue)]">${fmtMoney(grandTotal)}</span>
+          <span data-grandtotal class="text-[17px] font-bold text-[var(--imessage-blue)]">$0.00</span>
         </div>
-        <div class="px-4 pb-3 pt-1 bg-gray-50">
-          <button onclick="exportInvoice('${invoiceId}')"
-            class="w-full text-[13px] font-medium text-[var(--imessage-blue)] border border-blue-200 rounded-full py-1.5">
-            Export / Print
-          </button>
+        <div class="grid grid-cols-4 gap-1 px-3 pb-3 pt-1 bg-gray-50">
+          <button data-action="save" class="text-[11.5px] font-medium text-gray-600 border border-gray-200 rounded-full py-1.5">💾 Save</button>
+          <button data-action="export" class="text-[11.5px] font-medium text-[var(--imessage-blue)] border border-blue-200 rounded-full py-1.5">🖨️ Export</button>
+          <button data-action="text" class="text-[11.5px] font-medium text-[var(--imessage-blue)] border border-blue-200 rounded-full py-1.5">💬 Text</button>
+          <button data-action="email" class="text-[11.5px] font-medium text-[var(--imessage-blue)] border border-blue-200 rounded-full py-1.5">✉️ Email</button>
         </div>
       </div>
     </div>`;
   chat.appendChild(wrap);
   scrollToBottom();
+
+  const card = document.getElementById(invoiceId);
+  wireInvoiceCard(card, invoiceId);
+  recalcInvoiceTotals(card);
+
+  // Every new/reopened quote gets saved so closing the tab never loses it.
+  saveInvoiceToHistory(invoiceId, readInvoiceFromCard(card));
 }
 
-function exportInvoice(invoiceId) {
-  const card = document.getElementById(invoiceId);
-  if (!card) return;
+function readInvoiceFromCard(card) {
+  const client_name = card.querySelector('[data-field="client_name"]').value.trim();
+  const address = card.querySelector('[data-field="address"]').value.trim();
+  const line_items = Array.from(card.querySelectorAll('[data-row]')).map((row) => ({
+    description: row.querySelector('[data-field="description"]').value.trim(),
+    quantity: Number(row.querySelector('[data-field="quantity"]').value) || 0,
+    rate: Number(row.querySelector('[data-field="rate"]').value) || 0,
+  }));
+  return { client_name, address, line_items };
+}
+
+function recalcInvoiceTotals(card) {
+  let subtotal = 0;
+  card.querySelectorAll('[data-row]').forEach((row) => {
+    const qty = Number(row.querySelector('[data-field="quantity"]').value) || 0;
+    const rate = Number(row.querySelector('[data-field="rate"]').value) || 0;
+    const lineTotal = qty * rate;
+    row.querySelector('[data-line-total]').textContent = fmtMoney(lineTotal);
+    subtotal += lineTotal;
+  });
+  card.querySelector('[data-subtotal]').textContent = fmtMoney(subtotal);
+  card.querySelector('[data-grandtotal]').textContent = fmtMoney(subtotal);
+}
+
+function wireInvoiceCard(card, invoiceId) {
+  card.addEventListener('input', () => recalcInvoiceTotals(card));
+
+  card.querySelector('[data-add-row]').addEventListener('click', () => {
+    const rowsWrap = card.querySelector('[data-rows]');
+    rowsWrap.insertAdjacentHTML('beforeend', lineItemRowHtml({ description: '', quantity: 1, rate: 0 }));
+    recalcInvoiceTotals(card);
+  });
+
+  card.querySelector('[data-rows]').addEventListener('click', (e) => {
+    if (e.target.closest('[data-remove-row]')) {
+      const rows = card.querySelectorAll('[data-row]');
+      if (rows.length <= 1) return; // keep at least one row
+      e.target.closest('[data-row]').remove();
+      recalcInvoiceTotals(card);
+    }
+  });
+
+  card.querySelector('[data-action="save"]').addEventListener('click', () => {
+    saveInvoiceToHistory(invoiceId, readInvoiceFromCard(card));
+    const btn = card.querySelector('[data-action="save"]');
+    const original = btn.textContent;
+    btn.textContent = '✓ Saved';
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  });
+
+  card.querySelector('[data-action="export"]').addEventListener('click', () => exportInvoice(card));
+  card.querySelector('[data-action="text"]').addEventListener('click', () => textInvoice(card));
+  card.querySelector('[data-action="email"]').addEventListener('click', () => emailInvoice(card));
+}
+
+function invoiceSummaryLines(invoice) {
+  const total = invoice.line_items.reduce((s, li) => s + li.quantity * li.rate, 0);
+  const lines = invoice.line_items
+    .filter(li => li.description)
+    .map(li => `- ${li.description}: ${fmtMoney(li.quantity * li.rate)}`);
+  return { total, lines };
+}
+
+function exportInvoice(card) {
+  const invoice = readInvoiceFromCard(card);
+  const { total, lines } = invoiceSummaryLines(invoice);
   const win = window.open('', '_blank', 'width=600,height=800');
   if (!win) return;
   win.document.write(`
     <html>
       <head><title>Quote</title></head>
       <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 24px;">
-        ${card.innerHTML.replace(/<button[\s\S]*?<\/button>/, '')}
+        <h2 style="margin-bottom:0;">${escapeHtml(invoice.client_name || 'Quote')}</h2>
+        ${invoice.address ? `<p style="color:#666;margin-top:4px;">${escapeHtml(invoice.address)}</p>` : ''}
+        <table style="width:100%; border-collapse: collapse; margin-top: 16px;">
+          <thead><tr style="text-align:left; border-bottom: 1px solid #ccc;">
+            <th style="padding:6px 0;">Item</th><th>Qty</th><th>Rate</th><th>Amount</th>
+          </tr></thead>
+          <tbody>
+            ${invoice.line_items.map(li => `
+              <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding:6px 0;">${escapeHtml(li.description)}</td>
+                <td>${li.quantity}</td>
+                <td>${fmtMoney(li.rate)}</td>
+                <td>${fmtMoney(li.quantity * li.rate)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <h3 style="text-align:right; margin-top:16px;">Total: ${fmtMoney(total)}</h3>
       </body>
     </html>
   `);
@@ -453,15 +730,32 @@ function exportInvoice(invoiceId) {
   win.print();
 }
 
+function textInvoice(card) {
+  const invoice = readInvoiceFromCard(card);
+  const { total, lines } = invoiceSummaryLines(invoice);
+  const body = `Quote for ${invoice.client_name || 'you'}:\n${lines.join('\n')}\nTotal: ${fmtMoney(total)}`;
+  const phone = (activeContact && activeContact.phone) || '';
+  window.location.href = `sms:${phone}${phone ? '' : ''}?&body=${encodeURIComponent(body)}`;
+}
+
+function emailInvoice(card) {
+  const invoice = readInvoiceFromCard(card);
+  const { total, lines } = invoiceSummaryLines(invoice);
+  const subject = `Quote from LocalPro — ${invoice.client_name || 'your job'}`;
+  const body = `Hi ${invoice.client_name || 'there'},\n\nHere's your quote:\n${lines.join('\n')}\n\nTotal: ${fmtMoney(total)}\n\nThanks!`;
+  const email = (activeContact && activeContact.email) || '';
+  window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function fmtMoney(n) {
   return '$' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str == null ? '' : String(str);
   return div.innerHTML;
 }
+function escapeAttr(str) { return escapeHtml(str).replace(/"/g, '&quot;'); }
 
 function invoiceToHistoryText(invoice) {
   const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];
@@ -475,7 +769,14 @@ async function sendToBackend({ audioBlob, imageFile, text }) {
   const formData = new FormData();
   if (audioBlob) formData.append('audio', audioBlob, 'recording.webm');
   if (imageFile) formData.append('image', imageFile, imageFile.name || 'screenshot.jpg');
-  if (text) formData.append('text', text);
+
+  let combinedText = text || '';
+  if (activeContact) {
+    combinedText += `\n\n[Attached contact] Name: ${activeContact.name}` +
+      (activeContact.address ? `, Address: ${activeContact.address}` : '');
+  }
+  if (combinedText.trim()) formData.append('text', combinedText.trim());
+
   if (settings.defaultHourlyRate) formData.append('defaultHourlyRate', settings.defaultHourlyRate);
   if (settings.defaultMaterialMarkup) formData.append('defaultMaterialMarkup', settings.defaultMaterialMarkup);
   formData.append('history', JSON.stringify(conversationHistory));
@@ -499,6 +800,8 @@ async function handleSubmission({ audioBlob, imageFile, text, userLabel, userThu
       addAssistantTextBubble(reply.message);
       conversationHistory.push({ role: 'model', text: reply.message });
     } else {
+      if (activeContact && !reply.client_name) reply.client_name = activeContact.name;
+      if (activeContact && !reply.address) reply.address = activeContact.address || '';
       addInvoiceBubble(reply);
       conversationHistory.push({ role: 'model', text: invoiceToHistoryText(reply) });
     }
@@ -510,7 +813,6 @@ async function handleSubmission({ audioBlob, imageFile, text, userLabel, userThu
 
 // ---- Image attach ----
 attachBtn.addEventListener('click', () => imageFileInput.click());
-
 imageFileInput.addEventListener('change', () => {
   const file = imageFileInput.files[0];
   if (!file) return;
@@ -518,7 +820,6 @@ imageFileInput.addEventListener('change', () => {
   imagePreviewThumb.src = URL.createObjectURL(file);
   imagePreviewWrap.classList.remove('hidden');
 });
-
 removeImageBtn.addEventListener('click', () => {
   pendingImageFile = null;
   imageFileInput.value = '';
@@ -539,20 +840,11 @@ function submitText() {
   imageFileInput.value = '';
   imagePreviewWrap.classList.add('hidden');
 
-  handleSubmission({
-    text: value,
-    imageFile,
-    userLabel: value,
-    userThumbUrl: thumbUrl,
-  });
+  handleSubmission({ text: value, imageFile, userLabel: value, userThumbUrl: thumbUrl });
 }
-
 sendBtn.addEventListener('click', submitText);
-textInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') submitText();
-});
+textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitText(); });
 
-// Paste a screenshot directly into the chat (common on desktop)
 document.addEventListener('paste', (e) => {
   const items = Array.from(e.clipboardData?.items || []).filter(i => i.type.startsWith('image/'));
   if (!items.length) return;
@@ -563,11 +855,7 @@ document.addEventListener('paste', (e) => {
   imagePreviewWrap.classList.remove('hidden');
 });
 
-// ---- Voice recording (audio sent to Gemini) + optional live caption ----
-// Live captions use the Web Speech API purely as an on-screen preview while
-// talking — the actual transcription Gemini uses comes from the recorded
-// audio itself, so this still works correctly in browsers without speech
-// recognition support (the caption line is simply skipped).
+// ---- Voice recording + optional live caption ----
 function setupLiveCaption() {
   const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
   if (!SpeechRecognition) return null;
@@ -577,9 +865,7 @@ function setupLiveCaption() {
   recognition.lang = 'en-US';
   recognition.onresult = (event) => {
     let transcript = '';
-    for (let i = 0; i < event.results.length; i++) {
-      transcript += event.results[i][0].transcript;
-    }
+    for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
     liveCaption.textContent = transcript;
     liveCaption.classList.remove('hidden');
   };
@@ -604,11 +890,8 @@ micBtn.addEventListener('click', async () => {
       micBtn.classList.add('mic-recording', 'bg-red-500');
       micBtn.classList.remove('bg-[var(--imessage-blue)]');
       recordingHint.classList.remove('hidden');
-
       speechRecognition = setupLiveCaption();
-      if (speechRecognition) {
-        try { speechRecognition.start(); } catch (_) {}
-      }
+      if (speechRecognition) { try { speechRecognition.start(); } catch (_) {} }
     } catch (err) {
       addErrorBubble('Microphone access is needed to record a voice quote.');
     }
@@ -618,11 +901,7 @@ micBtn.addEventListener('click', async () => {
     micBtn.classList.remove('mic-recording', 'bg-red-500');
     micBtn.classList.add('bg-[var(--imessage-blue)]');
     recordingHint.classList.add('hidden');
-
-    if (speechRecognition) {
-      speechRecognition.stop();
-      speechRecognition = null;
-    }
+    if (speechRecognition) { speechRecognition.stop(); speechRecognition = null; }
     liveCaption.classList.add('hidden');
     liveCaption.textContent = '';
   }
