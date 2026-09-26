@@ -866,10 +866,14 @@ function setupLiveCaption() {
   recognition.onresult = (event) => {
     let transcript = '';
     for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
-    liveCaption.textContent = transcript;
-    liveCaption.classList.remove('hidden');
+    liveCaption.textContent = transcript || '🔴 Recording…';
   };
-  recognition.onerror = () => {};
+  // Live captions can fail on some browsers/devices when the mic is already
+  // in use by the audio recorder above — that's fine, the actual quote still
+  // works off the recorded audio. Just don't leave the caption line blank.
+  recognition.onerror = () => {
+    liveCaption.textContent = '🔴 Recording… (live captions unavailable on this device)';
+  };
   return recognition;
 }
 
@@ -890,8 +894,15 @@ micBtn.addEventListener('click', async () => {
       micBtn.classList.add('mic-recording', 'bg-red-500');
       micBtn.classList.remove('bg-[var(--imessage-blue)]');
       recordingHint.classList.remove('hidden');
+
+      liveCaption.textContent = '🔴 Recording…';
+      liveCaption.classList.remove('hidden');
       speechRecognition = setupLiveCaption();
-      if (speechRecognition) { try { speechRecognition.start(); } catch (_) {} }
+      if (speechRecognition) {
+        try { speechRecognition.start(); } catch (_) {
+          liveCaption.textContent = '🔴 Recording… (live captions unavailable on this device)';
+        }
+      }
     } catch (err) {
       addErrorBubble('Microphone access is needed to record a voice quote.');
     }
