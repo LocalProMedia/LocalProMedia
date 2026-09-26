@@ -1,13 +1,16 @@
 // server.js
 // -----------------------------------------------------------------------------
-// AI Voice/Photo-to-Invoice backend.
+// LocalPro Assistant backend — Voice/Photo/Text-to-Invoice.
 //
 // Responsibilities:
 // 1. Keep GEMINI_API_KEY on the server only — it is never sent to the browser.
 // 2. Accept an audio recording, an image (screenshot of a customer text/email),
-//    and/or typed text from the frontend — any combination.
+//    and/or typed text from the frontend — any combination — plus a short
+//    running conversation history so the AI can ask a follow-up question
+//    instead of guessing when it doesn't have enough to quote.
 // 3. Forward it to Gemini 1.5 Flash with a strict system instruction that
-//    forces raw-JSON output matching the invoice schema.
+//    forces raw-JSON output — either a finished estimate or a clarifying
+//    question.
 // 4. Validate/normalize that JSON and return it to the client.
 //
 // Run:
@@ -39,8 +42,6 @@ if (!GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-// Accept audio and/or an image in memory (not written to disk).
-// 20MB covers a few minutes of compressed voice or a large screenshot.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },
@@ -50,25 +51,25 @@ app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname))); // serves index.html from this same folder
 
-// ---- The system instruction: this is the entire "brain" of the extraction --
+// ---- System instruction: the entire "brain" of the extraction --------------
 const SYSTEM_INSTRUCTIONS = `
-You are a backend data-extraction engine for a contractor's voice/photo-to-invoice tool.
+You are the backend for LocalPro Assistant, a chat tool that turns a contractor's
+description of a job (voice, screenshot of a customer text/email, and/or typed
+text) into a priced quote.
 
-You will receive some combination of: a short audio recording, a screenshot or
-photo of a text message / email from a customer, and/or typed text, in which a
-contractor describes (or a customer's message implies) a job, a client, and/or
-the work to be billed. Audio is often spoken quickly, out of order, or with
-filler words ("uh", "so basically", "let's see"). A screenshot is often a
-casual text message thread — read any visible names, addresses, and job
-details directly from the image.
+You will often receive only a partial picture on the first message. Your job is
+to decide, each turn, whether you have ENOUGH to produce a real quote, or
+whether you need to ask ONE short, friendly, specific follow-up question first.
 
-Your ONLY job is to extract the relevant facts and return them as RAW JSON —
-nothing else. No markdown code fences. No "Here is the JSON:". No trailing
-commentary. Your entire response must be a single valid JSON object and
-nothing outside of it.
+Respond with RAW JSON ONLY — no markdown fences, no commentary, nothing outside
+a single JSON object. It must be exactly one of these two shapes:
 
-Return JSON matching exactly this shape:
+If you need more information:
+{ "type": "question", "message": "" }
+
+If you have enough to quote (even roughly):
 {
+  "type": "estimate",
   "client_name": "",
   "address": "",
   "line_items": [
@@ -76,27 +77,25 @@ Return JSON matching exactly this shape:
   ]
 }
 
-Extraction rules:
-- "client_name": the person or business being billed. If not stated, use "".
-- "address": the job site or billing address, as stated. If not stated, use "".
-- "line_items": one entry per distinct task, material, or billable item
-  mentioned. Always return at least one line item if any work is described
-  at all — never return an empty array unless the input contains no
-  identifiable work.
-- "description": a short, clean label for the item (e.g. "Replace kitchen
-  faucet", not a verbatim transcript).
-- "quantity": a plain number. Default to 1 if not stated or implied.
-- "rate": a plain number with NO currency symbol, commas, or units. If a
-  dollar amount is mentioned for that item, use it. If a default hourly rate
-  or material markup is provided below, use it for line items that don't have
-  their own stated price. If no price is available anywhere, use 0.
-- Never invent a client name, address, or price that was not stated,
-  shown in an image, or reasonably implied.
-- If the input contains no usable information at all, return:
-  { "client_name": "", "address": "", "line_items": [] }
+Rules for deciding which shape to use:
+- Ask a "question" when the work being done is too vague to name a real line
+  item (e.g. "clean my house" with no rooms, size, or scope; "fix my sink"
+  with no idea what's wrong). Ask about the ONE most important missing
+  detail — don't list several questions at once.
+- Do NOT ask about client name or address just because they're missing — those
+  can stay "". Only ask about them if the job genuinely can't be scoped or
+  priced without one (rare).
+- Once you have enough to name at least one concrete billable item, return
+  "estimate" — don't keep asking questions past that point. It's fine for an
+  estimate to be a reasonable, clearly-scoped guess.
+- If a contractor default hourly rate or material markup is provided below,
+  use it for any line item that doesn't have its own stated price.
+- "quantity": a plain number, default 1. "rate": a plain number, no symbols;
+  0 only if truly no price is available anywhere.
+- Never invent a client name, address, or price that wasn't stated, shown in
+  an image, or reasonably implied.
 
-Remember: output ONLY the JSON object. No explanations, no apologies, no
-markdown formatting of any kind.
+Remember: output ONLY the JSON object, nothing else.
 `.trim();
 
 // ---- The endpoint ------------------------------------------------------------
@@ -112,10 +111,25 @@ app.post(
       const audioFile = req.files?.audio?.[0] || null;
       const imageFile = req.files?.image?.[0] || null;
 
-      // Optional defaults the frontend can send along (from the settings drawer)
-      // so Gemini can price line items the customer didn't give a number for.
       const defaultHourlyRate = req.body?.defaultHourlyRate ? Number(req.body.defaultHourlyRate) : null;
       const defaultMaterialMarkup = req.body?.defaultMaterialMarkup ? Number(req.body.defaultMaterialMarkup) : null;
+
+      // Prior turns of this conversation, sent by the client as JSON text:
+      // [{ role: 'user' | 'model', text: '...' }, ...]
+      // Kept in the browser only — nothing is persisted server-side.
+      let history = [];
+      if (req.body?.history) {
+        try {
+          const parsed = JSON.parse(req.body.history);
+          if (Array.isArray(parsed)) {
+            history = parsed
+              .filter((h) => h && (h.role === 'user' || h.role === 'model') && typeof h.text === 'string' && h.text.trim())
+              .map((h) => ({ role: h.role, parts: [{ text: h.text.trim() }] }));
+          }
+        } catch (_) {
+          history = [];
+        }
+      }
 
       if (!audioFile && !imageFile && !textInput) {
         return res.status(400).json({
@@ -132,9 +146,9 @@ app.post(
         },
       });
 
-      // Build the multi-part request: audio + image + text, whichever are present.
-      const parts = [];
+      const chat = model.startChat({ history });
 
+      const parts = [];
       if (audioFile) {
         parts.push({
           inlineData: {
@@ -143,7 +157,6 @@ app.post(
           },
         });
       }
-
       if (imageFile) {
         parts.push({
           inlineData: {
@@ -163,17 +176,24 @@ app.post(
       if (combinedText.trim()) {
         parts.push({ text: combinedText.trim() });
       }
+      if (parts.length === 0) {
+        parts.push({ text: '(no additional text)' });
+      }
 
-      const result = await model.generateContent(parts);
+      const result = await chat.sendMessage(parts);
       const raw = (result.response.text() || '').trim();
-      const parsed = safeParseInvoiceJson(raw);
+      const parsed = safeParseJson(raw);
 
-      if (!parsed) {
-        console.error('Gemini returned non-JSON output:', raw);
+      if (!parsed || (parsed.type !== 'estimate' && parsed.type !== 'question')) {
+        console.error('Gemini returned unexpected output:', raw);
         return res.status(502).json({ error: 'The AI response could not be parsed. Please try again.' });
       }
 
-      res.json(normalizeInvoice(parsed));
+      if (parsed.type === 'question') {
+        return res.json({ type: 'question', message: typeof parsed.message === 'string' ? parsed.message : 'Can you tell me a bit more about the job?' });
+      }
+
+      return res.json({ type: 'estimate', ...normalizeInvoice(parsed) });
     } catch (err) {
       console.error('generate-quote error:', err);
       res.status(500).json({ error: 'Something went wrong generating the quote. Please try again.' });
@@ -182,12 +202,10 @@ app.post(
 );
 
 // ---- Helpers -----------------------------------------------------------------
-function safeParseInvoiceJson(raw) {
+function safeParseJson(raw) {
   try {
     return JSON.parse(raw);
   } catch (_) {
-    // Fallback: in case the model wraps the JSON in stray text despite
-    // instructions, pull out the first {...} block and try again.
     const match = raw.match(/\{[\s\S]*\}/);
     if (match) {
       try {
@@ -214,5 +232,5 @@ function normalizeInvoice(parsed) {
 }
 
 app.listen(PORT, () => {
-  console.log(`Voice/Photo-to-Invoice server running at http://localhost:${PORT}`);
+  console.log(`LocalPro Assistant server running at http://localhost:${PORT}`);
 });

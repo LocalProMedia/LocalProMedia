@@ -3,16 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Voice to Invoice — LocalPro Media</title>
+<title>LocalPro Assistant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root { --imessage-blue: #007AFF; }
   html, body { height: 100%; overscroll-behavior: none; }
   body {
     margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    background: #F5F5F7;
+    background: #E8E9EC;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Desktop: soft backdrop behind the phone-width card. Mobile: card fills the screen. */
+  @media (min-width: 640px) {
+    body {
+      background: radial-gradient(circle at top, #f0f1f4, #d9dbe0);
+      display: flex; align-items: center; justify-content: center;
+    }
+  }
+  .app-shell {
+    width: 100%; max-width: 480px; height: 100vh;
+  }
+  @media (min-width: 640px) {
+    .app-shell {
+      height: 88vh; max-height: 820px;
+      border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    }
   }
   .chat-scroll { -webkit-overflow-scrolling: touch; }
   .bubble-right {
@@ -44,15 +60,23 @@
 </style>
 </head>
 <body>
-<div class="flex flex-col h-screen max-w-md mx-auto bg-white shadow-xl relative">
+<div class="app-shell flex flex-col bg-white relative">
 
   <!-- Header -->
   <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white/90 backdrop-blur sticky top-0 z-20">
     <div class="w-9 h-9 rounded-full bg-[var(--imessage-blue)] flex items-center justify-center text-white font-bold text-sm">AI</div>
     <div class="flex-1">
-      <div class="font-semibold text-[15px] leading-tight text-gray-900">Quote Assistant</div>
+      <div class="font-semibold text-[15px] leading-tight text-gray-900">LocalPro Assistant</div>
       <div class="text-[12px] text-gray-400 leading-tight">Speak, type, or attach a screenshot</div>
     </div>
+    <button id="helpBtn" aria-label="How to use this"
+      class="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 active:scale-95 transition">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </button>
     <button id="settingsBtn" aria-label="Settings"
       class="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 active:scale-95 transition">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -72,7 +96,7 @@
     </div>
   </div>
 
-  <!-- Image preview strip (shown when a screenshot/photo is attached) -->
+  <!-- Image preview strip -->
   <div id="imagePreviewWrap" class="hidden px-3 pt-2 bg-white/95 backdrop-blur border-t border-gray-100">
     <div class="relative inline-block">
       <img id="imagePreviewThumb" class="h-16 w-16 rounded-lg object-cover border border-gray-200" alt="Attached screenshot preview">
@@ -106,7 +130,7 @@
 
       <div class="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2.5">
         <input id="textInput" type="text" placeholder="Describe the job..."
-          class="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder-gray-400">
+          class="flex-1 bg-transparent outline-none text-[15px] text-gray-900 placeholder-gray-400 min-w-0">
       </div>
 
       <button id="sendBtn" aria-label="Send"
@@ -153,6 +177,47 @@
   </div>
 </div>
 
+<!-- Tutorial / examples modal -->
+<div id="helpOverlay" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+  <div class="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-5 shadow-xl max-h-[85vh] overflow-y-auto">
+    <div class="text-[16px] font-semibold text-gray-900 mb-1">Three ways to get a quote</div>
+    <div class="text-[13px] text-gray-500 mb-4">Tap any example below to try it, or just talk / type / attach a screenshot like normal.</div>
+
+    <div class="space-y-3 mb-4">
+      <div class="flex gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-50 text-[var(--imessage-blue)] flex items-center justify-center flex-shrink-0 text-[15px]">💬</div>
+        <div class="text-[13.5px] text-gray-700 leading-snug"><span class="font-medium text-gray-900">Type it</span> — describe the job like you're texting a coworker. Rooms, sqft, or a rough scope is all it needs.</div>
+      </div>
+      <div class="flex gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-50 text-[var(--imessage-blue)] flex items-center justify-center flex-shrink-0 text-[15px]">🎤</div>
+        <div class="text-[13.5px] text-gray-700 leading-snug"><span class="font-medium text-gray-900">Say it</span> — tap the mic and talk naturally, filler words and all. It'll caption live and generate a quote when you stop.</div>
+      </div>
+      <div class="flex gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-50 text-[var(--imessage-blue)] flex items-center justify-center flex-shrink-0 text-[15px]">📎</div>
+        <div class="text-[13.5px] text-gray-700 leading-snug"><span class="font-medium text-gray-900">Screenshot it</span> — attach or paste a screenshot of a customer's text or email and it'll read the job straight off it.</div>
+      </div>
+      <div class="flex gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-50 text-[var(--imessage-blue)] flex items-center justify-center flex-shrink-0 text-[15px]">❓</div>
+        <div class="text-[13.5px] text-gray-700 leading-snug"><span class="font-medium text-gray-900">If it's too vague</span> — it'll ask you one quick follow-up question before quoting, instead of guessing.</div>
+      </div>
+    </div>
+
+    <div class="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Try an example</div>
+    <div id="exampleChips" class="flex flex-col gap-2 mb-4"></div>
+
+    <button id="helpCloseBtn" class="w-full rounded-lg bg-[var(--imessage-blue)] py-2 text-[14px] font-medium text-white">Got it</button>
+  </div>
+</div>
+
+<script>
+const EXAMPLE_PROMPTS = {
+  cleaner: "3-bedroom, 2-bath house, standard clean, customer wants it done biweekly",
+  plumber: "Kitchen faucet is leaking under the sink, needs to be replaced",
+  painter: "Repaint a 12x14 bedroom, walls and ceiling, customer supplies no paint",
+  electrician: "Install two new outlets in the garage, existing panel has room",
+  landscaper: "Weekly mowing and edging for a quarter-acre front and back yard",
+};
+</script>
 <script>
 const chat = document.getElementById('chat');
 const micBtn = document.getElementById('micBtn');
@@ -181,8 +246,13 @@ let isRecording = false;
 let pendingImageFile = null;
 let speechRecognition = null;
 
+// Running conversation history for this browser tab only — lets the AI ask a
+// follow-up question, then use your reply, without a backend database.
+// [{ role: 'user' | 'model', text: '...' }]
+let conversationHistory = [];
+
 // ---- Business profile defaults (stored locally — no backend/auth in this app) ----
-const SETTINGS_KEY = 'quoteAssistantSettings';
+const SETTINGS_KEY = 'localProAssistantSettings';
 
 function loadSettings() {
   try {
@@ -219,6 +289,52 @@ settingsSaveBtn.addEventListener('click', () => {
   closeSettings();
 });
 
+// ---- Tutorial / examples ----
+const helpBtn = document.getElementById('helpBtn');
+const helpOverlay = document.getElementById('helpOverlay');
+const helpCloseBtn = document.getElementById('helpCloseBtn');
+const exampleChips = document.getElementById('exampleChips');
+const TUTORIAL_SEEN_KEY = 'localProAssistantSeenTutorial';
+
+function renderExampleChips() {
+  const settings = loadSettings();
+  const preferredTrade = settings.tradeType || 'cleaner';
+  const order = [preferredTrade, ...Object.keys(EXAMPLE_PROMPTS).filter(t => t !== preferredTrade)];
+
+  exampleChips.innerHTML = '';
+  order.forEach((trade) => {
+    const prompt = EXAMPLE_PROMPTS[trade];
+    if (!prompt) return;
+    const chip = document.createElement('button');
+    chip.className = 'text-left rounded-xl border border-gray-200 px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-50 active:scale-[0.99] transition';
+    chip.innerHTML = `<span class="font-medium text-gray-900 capitalize">${trade}:</span> "${prompt}"`;
+    chip.addEventListener('click', () => {
+      textInput.value = prompt;
+      closeHelp();
+      textInput.focus();
+    });
+    exampleChips.appendChild(chip);
+  });
+}
+
+function openHelp() {
+  renderExampleChips();
+  helpOverlay.classList.remove('hidden');
+}
+
+function closeHelp() {
+  helpOverlay.classList.add('hidden');
+  localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
+}
+
+helpBtn.addEventListener('click', openHelp);
+helpCloseBtn.addEventListener('click', closeHelp);
+
+// Auto-show once, on first visit only
+if (!localStorage.getItem(TUTORIAL_SEEN_KEY)) {
+  openHelp();
+}
+
 // ---- Chat helpers ----
 function scrollToBottom() {
   chat.scrollTop = chat.scrollHeight;
@@ -232,6 +348,14 @@ function addUserBubble(label, thumbUrl) {
       ${thumbUrl ? `<img src="${thumbUrl}" class="max-w-[200px] rounded-xl border border-gray-200 object-cover" alt="Attached screenshot">` : ''}
       ${label ? `<div class="bubble-right px-4 py-2.5 text-[15px] leading-snug">${escapeHtml(label)}</div>` : ''}
     </div>`;
+  chat.appendChild(wrap);
+  scrollToBottom();
+}
+
+function addAssistantTextBubble(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex justify-start';
+  wrap.innerHTML = `<div class="bubble-left px-4 py-2.5 max-w-[80%] text-[15px] leading-snug">${escapeHtml(text)}</div>`;
   chat.appendChild(wrap);
   scrollToBottom();
 }
@@ -339,6 +463,12 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function invoiceToHistoryText(invoice) {
+  const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];
+  const lines = items.map(li => `${li.description} (qty ${li.quantity} @ $${li.rate})`).join('; ');
+  return `Estimate for ${invoice.client_name || 'client'}${invoice.address ? ' at ' + invoice.address : ''}: ${lines || 'no items'}`;
+}
+
 // ---- Backend call ----
 async function sendToBackend({ audioBlob, imageFile, text }) {
   const settings = loadSettings();
@@ -348,6 +478,7 @@ async function sendToBackend({ audioBlob, imageFile, text }) {
   if (text) formData.append('text', text);
   if (settings.defaultHourlyRate) formData.append('defaultHourlyRate', settings.defaultHourlyRate);
   if (settings.defaultMaterialMarkup) formData.append('defaultMaterialMarkup', settings.defaultMaterialMarkup);
+  formData.append('history', JSON.stringify(conversationHistory));
 
   const res = await fetch('/api/generate-quote', { method: 'POST', body: formData });
   const data = await res.json().catch(() => ({}));
@@ -357,11 +488,20 @@ async function sendToBackend({ audioBlob, imageFile, text }) {
 
 async function handleSubmission({ audioBlob, imageFile, text, userLabel, userThumbUrl }) {
   addUserBubble(userLabel, userThumbUrl);
+  conversationHistory.push({ role: 'user', text: userLabel || (imageFile ? '[attached a screenshot]' : '[voice message]') });
+
   addTypingBubble();
   try {
-    const invoice = await sendToBackend({ audioBlob, imageFile, text });
+    const reply = await sendToBackend({ audioBlob, imageFile, text });
     removeTypingBubble();
-    addInvoiceBubble(invoice);
+
+    if (reply.type === 'question') {
+      addAssistantTextBubble(reply.message);
+      conversationHistory.push({ role: 'model', text: reply.message });
+    } else {
+      addInvoiceBubble(reply);
+      conversationHistory.push({ role: 'model', text: invoiceToHistoryText(reply) });
+    }
   } catch (err) {
     removeTypingBubble();
     addErrorBubble(err.message || 'Something went wrong. Please try again.');
